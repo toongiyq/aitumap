@@ -16,6 +16,7 @@
 
     <script>
     (function () {
+      // 1) Rooms drawn as polyline/polygon (data-name).
       var ROOMS = [
         "C1.2.123K",
         "C1.2.124K",
@@ -24,30 +25,60 @@
         "ASSEMBLYHALL|АКТОВЫЙ ЗАЛ"
       ];
     
-      var SHAPES = [
-        '[data-name="ATAMEKEN|АТАМЕКЕН"] > path:first-child'
+      // 2) Groups to paint as a whole rectangle (data-name of the group).
+      var BOXES = [
+        "ATAMEKEN|АТАМЕКЕН"
       ];
     
+      // Optional: extra rooms from the link, e.g. ?rooms=C1.2.125K
       var extra = new URLSearchParams(location.search).get("rooms");
       if (extra) ROOMS = ROOMS.concat(extra.split(","));
     
       var style = "{fill:#ffd54f !important;stroke:#e65100 !important;stroke-width:3 !important;}";
       var css = "";
+      function clean(v) { return String(v).trim().replace(/["\\]/g, ""); }
     
       ROOMS.forEach(function (r) {
-        r = String(r).trim().replace(/["\\]/g, "");
+        r = clean(r);
         if (!r) return;
         var s = '[data-name="' + r + '"]';
         css += s + " polyline," + s + " polygon," + "polyline" + s + "," + "polygon" + s + style;
       });
     
-      SHAPES.forEach(function (sel) {
-        css += sel + style;
+      // Inner decorative lines of a boxed group: no fill, thin orange line
+      BOXES.forEach(function (b) {
+        b = clean(b);
+        if (!b) return;
+        css += '[data-name="' + b + '"] path{fill:none !important;stroke:#e65100 !important;stroke-width:1.5 !important;}';
       });
     
       var st = document.createElement("style");
       st.textContent = css;
       document.head.appendChild(st);
+    
+      // Draw a rectangle behind the group's content
+      function drawBoxes() {
+        BOXES.forEach(function (b) {
+          b = clean(b);
+          document.querySelectorAll('[data-name="' + b + '"]').forEach(function (g) {
+            if (g.getAttribute("data-hl") || !g.getBBox) return;
+            var bb;
+            try { bb = g.getBBox(); } catch (e) { return; }
+            if (!bb.width || !bb.height) return;
+            var r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            r.setAttribute("x", bb.x);
+            r.setAttribute("y", bb.y);
+            r.setAttribute("width", bb.width);
+            r.setAttribute("height", bb.height);
+            r.setAttribute("rx", 3);
+            r.setAttribute("style", "fill:#ffd54f;stroke:#e65100;stroke-width:3;pointer-events:none");
+            g.insertBefore(r, g.firstChild);
+            g.setAttribute("data-hl", "1");
+          });
+        });
+      }
+      new MutationObserver(drawBoxes).observe(document.documentElement, { childList: true, subtree: true });
+      drawBoxes();
     })();
     </script>
   </body>
