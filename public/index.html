@@ -15,45 +15,33 @@
     <div id="root"></div>
 
     <script>
-    (function () {
-      // Rooms highlighted by default (data-name values). Edit this list.
-      var ROOMS = [
-        "C1.2.123K",
-        "C1.2.124K",
-        "C1.2.138L",
-        "C1.2.139",
-        "ASSEMBLYHALL|АКТОВЫЙ ЗАЛ"
-      ];
-    
-      // 2) Areas without data-name: the beginning of their path "d" attribute.
-      var PATHS = [
-        "M413.31,274.06"
-      ];
-    
-      // Optional: extra rooms from the link, e.g. ?rooms=C1.2.125K
-      var extra = new URLSearchParams(location.search).get("rooms");
-      if (extra) ROOMS = ROOMS.concat(extra.split(","));
-    
-      var style = "{fill:#ffd54f !important;stroke:#e65100 !important;stroke-width:3 !important;}";
-      var css = "";
-    
-      ROOMS.forEach(function (r) {
-        r = String(r).trim().replace(/["\\]/g, "");
-        if (!r) return;
-        var s = '[data-name="' + r + '"]';
-        css += s + " polyline," + s + " polygon," + "polyline" + s + "," + "polygon" + s + style;
-      });
-    
-      PATHS.forEach(function (d) {
-        d = String(d).trim().replace(/["\\]/g, "");
-        if (!d) return;
-        css += 'path[d^="' + d + '"]' + style;
-      });
-    
-      var st = document.createElement("style");
-      st.textContent = css;
-      document.head.appendChild(st);
-    })();
+        (function () {
+          // Rooms highlighted by default (data-name values). Edit this list.
+          var ROOMS = [
+            "C1.2.123K",
+            "C1.2.124K",
+            "C1.2.138L",
+            "C1.2.139",
+            "ASSEMBLYHALL|АКТОВЫЙ ЗАЛ",
+            "ATAMEKEN|АТАМЕКЕН"
+          ];
+          
+          // Optional: extra rooms from the link, e.g. ?rooms=C1.2.125K
+          var extra = new URLSearchParams(location.search).get("rooms");
+          if (extra) ROOMS = ROOMS.concat(extra.split(","));
+        
+          var css = ROOMS.map(function (r) {
+            r = String(r).trim().replace(/["\\]/g, "");
+            if (!r) return "";
+            var s = '[data-name="' + r + '"]';
+            return s + " polyline," + s + " polygon," + "polyline" + s + "," + "polygon" + s +
+              "{fill:#ffd54f !important;stroke:#e65100 !important;stroke-width:3 !important;}";
+          }).join("");
+        
+          var st = document.createElement("style");
+          st.textContent = css;
+          document.head.appendChild(st);
+        })();
     </script>
   </body>
 </html>
