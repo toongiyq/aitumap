@@ -16,7 +16,7 @@
 
     <script>
     (function () {
-      // 1) Rooms drawn as polyline/polygon (data-name).
+      // 1) Rooms with a data-name (drawn as polyline/polygon).
       var ROOMS = [
         "C1.2.123K",
         "C1.2.124K",
@@ -25,84 +25,80 @@
         "ASSEMBLYHALL|АКТОВЫЙ ЗАЛ"
       ];
     
-      // 2) Groups painted as a whole rectangle, with an optional white label.
-      var BOXES = [
-        { name: "ATAMEKEN|АТАМЕКЕН", lines: ["ATAMEKEN", "SPACE"] }
-      ];
+      // 2) Atameken Space box (fixed size, no measuring)
+      var BOX = {
+        name: "ATAMEKEN|АТАМЕКЕН",
+        x: 353.26, y: 72.16, w: 49.92, h: 51.49,
+        lines: ["ATAMEKEN", "SPACE"]
+      };
     
       // Optional: extra rooms from the link, e.g. ?rooms=C1.2.125K
       var extra = new URLSearchParams(location.search).get("rooms");
       if (extra) ROOMS = ROOMS.concat(extra.split(","));
     
       var NS = "http://www.w3.org/2000/svg";
-      var style = "{fill:#ffd54f !important;stroke:#e65100 !important;stroke-width:3 !important;}";
-      var css = "";
       function clean(v) { return String(v).trim().replace(/["\\]/g, ""); }
     
+      var css = "";
+      var style = "{fill:#ffd54f !important;stroke:#e65100 !important;stroke-width:3 !important;}";
       ROOMS.forEach(function (r) {
         r = clean(r);
         if (!r) return;
         var s = '[data-name="' + r + '"]';
         css += s + " polyline," + s + " polygon," + "polyline" + s + "," + "polygon" + s + style;
       });
-    
-      // Inner decorative lines of a boxed group: no fill, thin orange line
-      BOXES.forEach(function (b) {
-        css += '[data-name="' + clean(b.name) + '"] path{fill:none !important;stroke:#e65100 !important;stroke-width:1.5 !important;}';
-      });
+      css += '[data-name="' + clean(BOX.name) + '"] path{fill:none !important;stroke:#e65100 !important;stroke-width:1.5 !important;}';
     
       var st = document.createElement("style");
       st.textContent = css;
       document.head.appendChild(st);
     
-      function drawBoxes() {
-        BOXES.forEach(function (box) {
-          document.querySelectorAll('[data-name="' + clean(box.name) + '"]').forEach(function (g) {
-            if (g.getAttribute("data-hl") || !g.getBBox) return;
-            var bb;
-            try { bb = g.getBBox(); } catch (e) { return; }
-            if (!bb.width || !bb.height) return;
+      function drawBox() {
+        try {
+          var groups = document.querySelectorAll('[data-name="' + clean(BOX.name) + '"]');
+          for (var i = 0; i < groups.length; i++) {
+            var g = groups[i];
+            if (g.querySelector("rect.hl-box")) continue;   // already drawn
     
-            // rectangle behind the group's content
             var r = document.createElementNS(NS, "rect");
-            r.setAttribute("x", bb.x);
-            r.setAttribute("y", bb.y);
-            r.setAttribute("width", bb.width);
-            r.setAttribute("height", bb.height);
+            r.setAttribute("class", "hl-box");
+            r.setAttribute("x", BOX.x);
+            r.setAttribute("y", BOX.y);
+            r.setAttribute("width", BOX.w);
+            r.setAttribute("height", BOX.h);
             r.setAttribute("rx", 3);
             r.setAttribute("style", "fill:#ffd54f;stroke:#e65100;stroke-width:3;pointer-events:none");
             g.insertBefore(r, g.firstChild);
     
-            // white label on top
-            if (box.lines && box.lines.length) {
-              var cx = bb.x + bb.width / 2;
-              var fs = bb.width * 0.14;          // font size: change 0.14 to make text bigger/smaller
-              var lh = fs * 1.15;
-              var y0 = bb.y + bb.height / 2 - (box.lines.length - 1) * lh / 2 + fs * 0.35;
-              var t = document.createElementNS(NS, "text");
-              t.setAttribute("text-anchor", "middle");
-              t.setAttribute("style",
-                "fill:#fff !important;" +
-                "font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;" +
-                "font-weight:600;letter-spacing:0.5px;font-size:" + fs + "px;" +
-                "pointer-events:none;user-select:none");
-              box.lines.forEach(function (line, i) {
-                var ts = document.createElementNS(NS, "tspan");
-                ts.setAttribute("x", cx);
-                ts.setAttribute("y", y0 + i * lh);
-                ts.textContent = line;
-                t.appendChild(ts);
-              });
-              g.appendChild(t);
+            var cx = BOX.x + BOX.w / 2;
+            var fs = BOX.w * 0.14;
+            var lh = fs * 1.15;
+            var y0 = BOX.y + BOX.h / 2 - (BOX.lines.length - 1) * lh / 2 + fs * 0.35;
+            var t = document.createElementNS(NS, "text");
+            t.setAttribute("class", "hl-label");
+            t.setAttribute("text-anchor", "middle");
+            t.setAttribute("style",
+              "fill:#fff !important;font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;" +
+              "font-weight:600;letter-spacing:0.5px;font-size:" + fs + "px;" +
+              "pointer-events:none;user-select:none;-webkit-user-select:none");
+            for (var k = 0; k < BOX.lines.length; k++) {
+              var ts = document.createElementNS(NS, "tspan");
+              ts.setAttribute("x", cx);
+              ts.setAttribute("y", y0 + k * lh);
+              ts.textContent = BOX.lines[k];
+              t.appendChild(ts);
             }
-    
-            g.setAttribute("data-hl", "1");
-          });
-        });
+            g.appendChild(t);
+          }
+        } catch (e) {}
       }
-      new MutationObserver(drawBoxes).observe(document.documentElement, { childList: true, subtree: true });
-      drawBoxes();
-      setInterval(drawBoxes, 700);
+    
+      new MutationObserver(drawBox).observe(document.documentElement, { childList: true, subtree: true });
+      setInterval(drawBox, 700);
+      ["touchend", "resize", "orientationchange"].forEach(function (ev) {
+        window.addEventListener(ev, function () { setTimeout(drawBox, 100); });
+      });
+      drawBox();
     })();
     </script>
   </body>
