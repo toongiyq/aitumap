@@ -16,7 +16,7 @@
 
     <script>
     (function () {
-      // 1) Rooms with a data-name (drawn as polyline/polygon).
+      // Rooms highlighted by default (data-name values). Edit this list.
       var ROOMS = [
         "C1.2.123K",
         "C1.2.124K",
@@ -25,80 +25,21 @@
         "ASSEMBLYHALL|АКТОВЫЙ ЗАЛ"
       ];
     
-      // 2) Atameken Space box (fixed size, no measuring)
-      var BOX = {
-        name: "ATAMEKEN|АТАМЕКЕН",
-        x: 353.26, y: 72.16, w: 49.92, h: 51.49,
-        lines: ["ATAMEKEN", "SPACE"]
-      };
-    
       // Optional: extra rooms from the link, e.g. ?rooms=C1.2.125K
       var extra = new URLSearchParams(location.search).get("rooms");
       if (extra) ROOMS = ROOMS.concat(extra.split(","));
     
-      var NS = "http://www.w3.org/2000/svg";
-      function clean(v) { return String(v).trim().replace(/["\\]/g, ""); }
-    
-      var css = "";
       var style = "{fill:#ffd54f !important;stroke:#e65100 !important;stroke-width:3 !important;}";
-      ROOMS.forEach(function (r) {
-        r = clean(r);
-        if (!r) return;
+      var css = ROOMS.map(function (r) {
+        r = String(r).trim().replace(/["\\]/g, "");
+        if (!r) return "";
         var s = '[data-name="' + r + '"]';
-        css += s + " polyline," + s + " polygon," + "polyline" + s + "," + "polygon" + s + style;
-      });
-      css += '[data-name="' + clean(BOX.name) + '"] path{fill:none !important;stroke:#e65100 !important;stroke-width:1.5 !important;}';
+        return s + " polyline," + s + " polygon," + "polyline" + s + "," + "polygon" + s + style;
+      }).join("");
     
       var st = document.createElement("style");
       st.textContent = css;
       document.head.appendChild(st);
-    
-      function drawBox() {
-        try {
-          var groups = document.querySelectorAll('[data-name="' + clean(BOX.name) + '"]');
-          for (var i = 0; i < groups.length; i++) {
-            var g = groups[i];
-            if (g.querySelector("rect.hl-box")) continue;   // already drawn
-    
-            var r = document.createElementNS(NS, "rect");
-            r.setAttribute("class", "hl-box");
-            r.setAttribute("x", BOX.x);
-            r.setAttribute("y", BOX.y);
-            r.setAttribute("width", BOX.w);
-            r.setAttribute("height", BOX.h);
-            r.setAttribute("rx", 3);
-            r.setAttribute("style", "fill:#ffd54f;stroke:#e65100;stroke-width:3;pointer-events:none");
-            g.insertBefore(r, g.firstChild);
-    
-            var cx = BOX.x + BOX.w / 2;
-            var fs = BOX.w * 0.14;
-            var lh = fs * 1.15;
-            var y0 = BOX.y + BOX.h / 2 - (BOX.lines.length - 1) * lh / 2 + fs * 0.35;
-            var t = document.createElementNS(NS, "text");
-            t.setAttribute("class", "hl-label");
-            t.setAttribute("text-anchor", "middle");
-            t.setAttribute("style",
-              "fill:#fff !important;font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;" +
-              "font-weight:600;letter-spacing:0.5px;font-size:" + fs + "px;" +
-              "pointer-events:none;user-select:none;-webkit-user-select:none");
-            for (var k = 0; k < BOX.lines.length; k++) {
-              var ts = document.createElementNS(NS, "tspan");
-              ts.setAttribute("x", cx);
-              ts.setAttribute("y", y0 + k * lh);
-              ts.textContent = BOX.lines[k];
-              t.appendChild(ts);
-            }
-            g.appendChild(t);
-          }
-        } catch (e) {}
-      }
-    
-      new MutationObserver(drawBox).observe(document.documentElement, { childList: true, subtree: true });
-      setInterval(drawBox, 700);
-      ["touchend", "resize", "orientationchange"].forEach(function (ev) {
-        window.addEventListener(ev, function () { setTimeout(drawBox, 100); });
-      });
-      drawBox();
     })();
     </script>
   </body>
