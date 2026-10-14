@@ -102,6 +102,7 @@
       }
       new MutationObserver(drawBoxes).observe(document.documentElement, { childList: true, subtree: true });
       drawBoxes();
+      setInterval(drawBoxes, 700);
     })();
     </script>
   </body>
